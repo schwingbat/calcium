@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Calcium Test</title>
+	<link rel="stylesheet" href="Ca.css">
+	<link rel="stylesheet" href="test.css">
+</head>
+<body>
+	<!--
+		Ideally, once web components become more widespread, I could do something like this:
+
+		<ca-container>
+			<ca-page route="/">
+				...
+			</ca-page>
+			<ca-page route="/login">
+				<ca-link href="/"></ca-link>
+				...
+			</ca-page>
+		</ca-container>
+	-->
+
+	<ul class="ca-container">
+		
+		<!-- Home -->
+		<li class="ca-page" data-ca-route="/">
+			<span>This is the home page</span>
+			<a href="/login" data-ca-link>To login</a>
+		</li>
+
+		<!-- Login -->
+		<li class="ca-page" data-ca-route="/login">
+			<span>This is the login page</span>
+			<form class="login-form">
+				<label for="login-name">Username</label>
+				<input type="text" id="login-name">
+
+				<label for="login-password">Password</label>
+				<input type="password" id="login-password">
+
+				<input type="submit" value="Log In">
+			</form>
+			<a href="/" data-ca-link>To home</a>
+		</li>
+
+		<!-- 404 -->
+		<li class="ca-page" data-ca-route="*">
+			<span>Page not found!</span>
+			<a href="/" data-ca-link>Return to home!</a>
+		</li>
+
+	</ul>
+
+	<script src="Ca.js"></script>
+	<script src="test.js"></script>
+</body>
+</html>

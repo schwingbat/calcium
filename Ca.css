@@ -1,0 +1,30 @@
+.ca-container,
+.ca-container * {
+	box-sizing: border-box;
+}
+
+.ca-container {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	overflow-y: auto; /* scroll vertically */
+
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ca-page {
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+
+	display: none;
+}
+
+.ca-visible {
+	display: block;
+}
