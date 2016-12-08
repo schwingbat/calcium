@@ -108,7 +108,13 @@
 		routes: {},
 		config: {},
 		go: function(path) {
-			window.location.hash = this.buildURL(path);
+			var loc = null;
+			if (path === '/' || path === '') {
+				loc = '/'
+			} else {
+				loc = this.buildURL(path)
+			}
+			window.location.hash = loc;
 		},
 		match: function(route) {
 			if (route[0] === '!') route = route.slice(1);
