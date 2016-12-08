@@ -1,6 +1,103 @@
 (function() {
 	'use strict';
 
+    var bindings = {};
+    var models = {};
+
+    /************************************
+	 * 			    UTILS               *
+	 ************************************/
+
+    function _deepCloneObject(obj) {
+        var newObj = {};
+
+        for (var key in obj) {
+            if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                newObj[key] = _deepCloneObject(obj[key]);
+            } else {
+                newObj[key] = obj[key];
+            }
+        }
+
+        return newObj;
+    }
+
+	function _arrayIncludes(arr, val) {
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i] === val) return true;
+		}
+		return false;
+	}
+
+	function _parseObjectPath(path) {
+		return path.split(/[.|\[\]]/ig);
+	}
+
+	// Dive deep into a nested object
+	function _delve(obj, path) {
+		var target = obj;
+
+		for (var i = 0; i < path.length; i++) {
+			var key = path[i];
+
+			if (target[key])
+				target = target[key];
+			else
+				return target[key];
+		}
+
+		return target;
+	}
+
+	function _deepCompare(obj1, obj2) {
+		// Determines if two objects are equal by value.
+
+		var oneType = typeof obj1;
+		var twoType = typeof obj2;
+
+		if (oneType !== twoType) {
+			return false;
+		}
+
+		// Catch if either are nonexistent
+		if (oneType === 'undefined') {
+			if (twoType === 'undefined') {
+				return true;
+			}
+			return false;
+		}
+
+		// Check equality of each value.
+		for (var key in obj1) {
+			if (typeof obj1[key] === 'object') {
+
+				// Deep check each nested object, because two objects don't equal each other by JS spec.
+				if (!_deepCompare(obj1[key], obj2[key])) {
+					return false;
+				}
+			} else {
+				if (obj1[key] !== obj2[key]) {
+					return false;
+				}
+			}
+
+		}
+
+		// If no other check failed, these are probably equal.
+		return true;
+	}
+
+	function _refreshBindings(model) {
+		if (bindings[model]) {
+			var model = bindings[model];
+			for (var i = 0; i < model.length; i++) {
+				if (typeof model[i] === 'function') {
+					console.log(model[i]());
+				}
+			}
+		}
+	}
+
 	/************************************
 	 * 			   ROUTING              *
 	 ************************************/
@@ -86,6 +183,91 @@
 		}
 	});
 
+    // Record all bindings.
+
+	// Register these val names as event handlers
+	var eventTypes = [
+		'click', 'mousedown', 'mouseup', 'mouseover', 'mouseenter', 'mouseleave',
+		'submit',
+	];
+
+	// Attributes which are set through JS directly
+	var directSetters = [
+		'textContent'
+	];
+
+	// Looks up a value each time so an event handler can be changed through the model at runtime.
+	function _dynamicHandler(path) {
+		return function() {
+			var method = _delve(models, _parseObjectPath(path));
+
+			if (typeof method === 'function') {
+				return method();
+			} else {
+				throw new Error('That method does not exist!');
+			}
+		}
+	}
+
+    document.querySelectorAll('[data-ca-bind]').forEach(function(el) {
+        var bindVal = el.getAttribute('data-ca-bind');
+        var binds = bindVal.split(',').map(function(val) {
+            // Split at commas, then at colons. Trim white space.
+            return val.split(':').map(function(v) { return v.trim(); });
+        });
+
+		binds.forEach(function(b) {
+			var attr = b[0];
+			var val = b[1];
+
+			// Check if the bound value is an event type.
+			if (_arrayIncludes(eventTypes, attr)) {
+				el.addEventListener(attr, _dynamicHandler(val));
+				console.log('Added event listener: '+attr+' bound to '+val);
+			} else {
+				var path = _parseObjectPath(val);
+				var modelName = path[0];
+
+				if (!bindings[modelName]) {
+					bindings[modelName] = [];
+				}
+
+				var bindFunc = null;
+
+				if (_arrayIncludes(directSetters, attr)) {
+					bindFunc = function() {
+						el[attr] = _delve(models, path);
+						return _delve(models, path);
+					}
+				} else {
+					bindFunc = function() {
+						el.setAttribute(attr, _delve(models, path));
+					}
+				}
+
+				bindings[modelName].push(bindFunc);
+			}
+		});
+    });
+
+	document.querySelectorAll('[data-ca-if]').forEach(function(el) {
+		var ifStr = el.getAttribute('data-ca-if');
+		var negate = ifStr[0] === '!';
+		var path = _parseObjectPath(negate ? ifStr.slice(1) : ifStr);
+		var modelName = path[0];
+
+		bindings[modelName].push(function() {
+			var val = _delve(models, path);
+
+			if (val)
+				el.classList[negate ? 'add' : 'remove']('ca-hidden');
+			else
+				el.classList[negate ? 'remove' : 'add']('ca-hidden');
+		});
+
+		console.log({ ifStr, negate, path });
+	});
+
 
 	/************************************
 	 * 			  NAVIGATION            *
@@ -107,7 +289,33 @@
 
 	document.addEventListener('click', linkHandler);
 
+    /************************************
+	 * 			  PUBLIC API            *
+	 ************************************/
 
+    var Ca = {};
+    Ca.models = models;
+	Ca.router = {
+		go: router.go
+	}
+
+    window.Ca = Ca;
+
+
+	// Start model digest cycle.
+
+	(function() {
+		var previous = {};
+
+		setInterval(function() {
+			for (var model in Ca.models) {
+				if (!_deepCompare(Ca.models[model], previous[model])) {
+					_refreshBindings(model);
+				}
+			}
+			previous = _deepCloneObject(Ca.models);
+		}, 50);
+	})();
 
 	// Initialize route on load.
 
@@ -120,6 +328,3 @@
 		}
 	})();
 })();
-
-
-

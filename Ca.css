@@ -28,3 +28,7 @@
 .ca-visible {
 	display: block;
 }
+
+.ca-hidden {
+	display: none;
+}

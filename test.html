@@ -22,26 +22,35 @@
 	-->
 
 	<ul class="ca-container">
-		
+
 		<!-- Home -->
 		<li class="ca-page" data-ca-route="/">
-			<span>This is the home page</span>
+			<span data-ca-bind="textContent: data.greeting"></span>
 			<a href="/login" data-ca-link>To login</a>
+
+			<div data-ca-if="data.loggedIn">
+				<p>Hello, <span data-ca-bind="textContent: data.user.username"></span>!</p>
+				Not you? <button data-ca-bind="click: methods.logout">Log Out</button>
+			</div>
+
+			<div data-ca-if="!data.loggedIn">
+				<p>Hey there! You aren't logged in. Why not <a href="/login" data-ca-link>log in?</a></p>
+			</div>
 		</li>
 
 		<!-- Login -->
 		<li class="ca-page" data-ca-route="/login">
-			<span>This is the login page</span>
-			<form class="login-form">
+			<span>Please log in</span>
+
+			<form class="login-form" data-ca-bind="submit: methods.login">
 				<label for="login-name">Username</label>
 				<input type="text" id="login-name">
 
-				<label for="login-password">Password</label>
-				<input type="password" id="login-password">
-
 				<input type="submit" value="Log In">
 			</form>
-			<a href="/" data-ca-link>To home</a>
+
+			<a href="/" data-ca-link>Back to home</a>
+
 		</li>
 
 		<!-- 404 -->
@@ -53,6 +62,41 @@
 	</ul>
 
 	<script src="Ca.js"></script>
-	<script src="test.js"></script>
+
+	<script>
+		Ca.models.data = {
+			greeting: 'Hello! this is from the "data" model.',
+			loggedIn: false,
+			user: null,
+		}
+
+		Ca.models.methods = {
+			login: function() {
+				var data = Ca.models.data;
+
+				var username = document.getElementById('login-name').value;
+
+				console.log('logging in as '+username);
+
+				data.loggedIn = true;
+				data.user = {
+					username: username,
+					favoriteFoods: []
+				};
+
+				Ca.router.go('/');
+			},
+
+			logout: function() {
+				var data = Ca.models.data;
+
+				document.getElementById('login-name').value = '';
+				data.loggedIn = false;
+				data.user = null;
+			},
+		}
+
+		console.log(window.Ca);
+	</script>
 </body>
 </html>
