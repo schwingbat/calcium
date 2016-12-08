@@ -85,3 +85,8 @@ Here's what a basic site structure looks like:
 ```
 
 In an effort to reduce complexity and make the API as friendly as possible, models use dirty checking à la Angular. That means you don't need to worry about getters and setters; just change your data and your bindings will worry about the rest. There are probably performance implications of doing this, but I fully intend to switch to some kind of triggered watcher system when whatever's going on with `Object.observe()` and the new ES6 `Proxy` object stabilize. This switch will be seamless and require no changes to the API for the added efficiency. But, in case you want to make something monstrously complex with Calcium right now, you've been warned.
+
+## Up Next
+
+Partially to keep myself focused, and because it's nice to know for you, here's a list of upcoming features:
+- `data-ca-each`: Duplicate an element for each item in an array or object and make the item's data available under some kind of special namespace for use in child elements.
