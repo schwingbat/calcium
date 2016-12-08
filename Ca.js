@@ -1,26 +1,26 @@
 (function() {
 	'use strict';
 
-    var bindings = {};
-    var models = {};
+	var bindings = {};
+	var models = {};
 
-    /************************************
+	/************************************
 	 * 			    UTILS               *
 	 ************************************/
 
-    function _deepCloneObject(obj) {
-        var newObj = {};
+	function _deepCloneObject(obj) {
+		var newObj = {};
 
-        for (var key in obj) {
-            if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                newObj[key] = _deepCloneObject(obj[key]);
-            } else {
-                newObj[key] = obj[key];
-            }
-        }
+		for (var key in obj) {
+			if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+				newObj[key] = _deepCloneObject(obj[key]);
+			} else {
+				newObj[key] = obj[key];
+			}
+		}
 
-        return newObj;
-    }
+		return newObj;
+	}
 
 	function _arrayIncludes(arr, val) {
 		for (var i = 0; i < arr.length; i++) {
@@ -183,12 +183,12 @@
 		}
 
 		if (router.routes[route]) {
-			console.warn('A route by the name of "'+ route +'" already exists. Replacing the old route with the new one.');
+			console.warn('A route by the name of "' + route + '" already exists. Replacing the old route with the new one.');
 		}
 		router.routes[route] = page;
 	});
 
-    // Record all bindings.
+	// Record all bindings.
 
 	// Register these val names as event handlers
 	var eventTypes = [
@@ -196,7 +196,7 @@
 		'submit',
 	];
 
-	// Attributes which are set through JS directly
+	// Attributes which are set through JS directly (vs. with setAttribute())
 	var directSetters = [
 		'textContent'
 	];
@@ -214,12 +214,14 @@
 		}
 	}
 
-    document.querySelectorAll('[data-ca-bind]').forEach(function(el) {
-        var bindVal = el.getAttribute('data-ca-bind');
-        var binds = bindVal.split(',').map(function(val) {
-            // Split at commas, then at colons. Trim white space.
-            return val.split(':').map(function(v) { return v.trim(); });
-        });
+	document.querySelectorAll('[data-ca-bind]').forEach(function(el) {
+		var bindVal = el.getAttribute('data-ca-bind');
+		var binds = bindVal.split(',').map(function(val) {
+			// Split at commas, then at colons. Trim white space.
+			return val.split(':').map(function(v) {
+				return v.trim();
+			});
+		});
 
 		binds.forEach(function(b) {
 			var attr = b[0];
@@ -228,7 +230,7 @@
 			// Check if the bound value is an event type.
 			if (_arrayIncludes(eventTypes, attr)) {
 				el.addEventListener(attr, _dynamicHandler(val));
-				console.log('Added event listener: '+attr+' bound to '+val);
+				console.log('Added event listener: ' + attr + ' bound to ' + val);
 			} else {
 				var path = _parseObjectPath(val);
 				var modelName = path[0];
@@ -253,7 +255,7 @@
 				bindings[modelName].push(bindFunc);
 			}
 		});
-    });
+	});
 
 	document.querySelectorAll('[data-ca-if]').forEach(function(el) {
 		var ifStr = el.getAttribute('data-ca-if');
@@ -270,7 +272,11 @@
 				el.classList[negate ? 'remove' : 'add']('ca-hidden');
 		});
 
-		console.log({ ifStr, negate, path });
+		console.log({
+			ifStr,
+			negate,
+			path
+		});
 	});
 
 
@@ -291,17 +297,17 @@
 
 	document.addEventListener('click', linkHandler);
 
-    /************************************
+	/************************************
 	 * 			  PUBLIC API            *
 	 ************************************/
 
-    var Ca = {};
-    Ca.models = models;
+	var Ca = {};
+	Ca.models = models;
 	Ca.router = {
 		go: router.go
 	}
 
-    window.Ca = Ca;
+	window.Ca = Ca;
 
 
 	// Start model digest cycle.
