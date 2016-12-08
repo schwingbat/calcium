@@ -283,11 +283,8 @@
 	function linkHandler(e) {
 		if (e.target.getAttribute('data-ca-link') != null) {
 			e.preventDefault();
-			e.stopPropagation();
 
 			var href = e.target.getAttribute('href');
-
-			console.log(e, href);
 			router.go(href);
 		}
 	}
