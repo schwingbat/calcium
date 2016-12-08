@@ -183,10 +183,9 @@
 		}
 
 		if (router.routes[route]) {
-			console.warn('A route by the name of "'+ route +'" already exists. Keeping the first and ignoring subsequent duplicates.');
-		} else {
-			router.routes[route] = page;
+			console.warn('A route by the name of "'+ route +'" already exists. Replacing the old route with the new one.');
 		}
+		router.routes[route] = page;
 	});
 
     // Record all bindings.
