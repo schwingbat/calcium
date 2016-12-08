@@ -5,7 +5,7 @@
   var models = {};
 
   /************************************
-   * 			    UTILS               *
+   *              UTILS               *
    ************************************/
 
   function _deepCloneObject(obj) {
@@ -99,7 +99,7 @@
   }
 
   /************************************
-   * 			   ROUTING              *
+   *             ROUTING              *
    ************************************/
 
   // Routing uses hashbang only at the moment. Config options are coming later.
@@ -170,7 +170,7 @@
 
 
   /************************************
-   * 		   COMPONENT SETUP          *
+   *         COMPONENT SETUP          *
    ************************************/
 
   // 1. Determine our page elements (ones that have routes anyway. Others are ignored.)
@@ -281,7 +281,7 @@
 
 
   /************************************
-   * 			  NAVIGATION            *
+   *            NAVIGATION            *
    ************************************/
 
   // 2. Set up event handlers for links to avoid redirects.
@@ -298,7 +298,7 @@
   document.addEventListener('click', linkHandler);
 
   /************************************
-   * 			  PUBLIC API            *
+   *            PUBLIC API            *
    ************************************/
 
   var Ca = {};
