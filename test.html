@@ -13,6 +13,7 @@
 		<li class="ca-page" data-ca-route="/">
 			<span data-ca-bind="textContent: data.greeting"></span>
 
+			<div data-ca-if="data.loggedIn" class="welcome-box">
 				<p>Hello, <span data-ca-bind="textContent: data.user.username"></span>!</p>
 				Not you? <button data-ca-bind="click: methods.logout">Log Out</button>
 			</div>
