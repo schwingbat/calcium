@@ -7,28 +7,12 @@
 	<link rel="stylesheet" href="test.css">
 </head>
 <body>
-	<!--
-		Ideally, once web components become more widespread, I could do something like this:
-
-		<ca-container>
-			<ca-page route="/">
-				...
-			</ca-page>
-			<ca-page route="/login">
-				<ca-link href="/"></ca-link>
-				...
-			</ca-page>
-		</ca-container>
-	-->
-
 	<ul class="ca-container">
 
 		<!-- Home -->
 		<li class="ca-page" data-ca-route="/">
 			<span data-ca-bind="textContent: data.greeting"></span>
-			<a href="/login" data-ca-link>To login</a>
 
-			<div data-ca-if="data.loggedIn">
 				<p>Hello, <span data-ca-bind="textContent: data.user.username"></span>!</p>
 				Not you? <button data-ca-bind="click: methods.logout">Log Out</button>
 			</div>
