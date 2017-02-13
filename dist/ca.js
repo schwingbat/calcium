@@ -34,11 +34,11 @@
   }
 
   // Dive deep into a nested object
-  function _delve(obj, path) {
+  function _delve(obj, pathArr) {
     var target = obj;
 
-    for (var i = 0; i < path.length; i++) {
-      var key = path[i];
+    for (var i = 0; i < pathArr.length; i++) {
+      var key = pathArr[i];
 
       if (target[key])
         target = target[key];
@@ -52,14 +52,19 @@
   function _deepCompare(obj1, obj2) {
     // Determines if two objects are equal by value.
 
-    var oneType = typeof obj1;
-    var twoType = typeof obj2;
+    var oneType = Array.isArray(obj1) ? 'array' : typeof obj1;
+    var twoType = Array.isArray(obj2) ? 'array' : typeof obj2;
 
     if (oneType !== twoType) {
       return false;
     }
 
-    // Catch if either are nonexistent
+    // Both are arrays, but with different lengths.
+    if (oneType === 'array' && obj1.length !== obj2.length) {
+      return false;
+    }
+
+    // Catch if either are nonexistent.
     if (oneType === 'undefined') {
       if (twoType === 'undefined') {
         return true;
@@ -87,12 +92,12 @@
     return true;
   }
 
-  function _refreshBindings(model) {
+  function _refreshBindings(model, newVal, oldVal) {
     if (bindings[model]) {
       var model = bindings[model];
       for (var i = 0; i < model.length; i++) {
         if (typeof model[i] === 'function') {
-          console.log(model[i]());
+          model[i](newVal, oldVal);
         }
       }
     }
@@ -176,7 +181,7 @@
   // 1. Determine our page elements (ones that have routes anyway. Others are ignored.)
 
   document.querySelectorAll('.ca-page').forEach(function(page) {
-    var route = page.getAttribute('data-ca-route');
+    var route = page.getAttribute('data-ca-route') || page.getAttribute('route');
     if (!route) {
       console.warn('Page has no route, and therefore has no way to be shown.', page);
       return false;
@@ -214,20 +219,31 @@
     }
   }
 
-  document.querySelectorAll('[data-ca-bind]').forEach(function(el) {
-    var bindVal = el.getAttribute('data-ca-bind');
-    var binds = bindVal.split(',').map(function(val) {
-      // Split at commas, then at colons. Trim white space.
-      return val.split(':').map(function(v) {
-        return v.trim();
-      });
-    });
+  document.querySelectorAll('[data-ca-bind], [bind]').forEach(function(el) {
+    var bindVal = el.getAttribute('data-ca-bind') || el.getAttribute('bind');
 
-    binds.forEach(function(b) {
-      var attr = b[0];
-      var val = b[1];
+    // Multiple bindings can be given if separated by commas.
+    bindVal.split(',').forEach(function(b) {
+      var attr;
+      var val;
 
-      // Check if the bound value is an event type.
+      /* binds can be in the format 'attribute: value' or 'value to attribute'.
+         This is where we figure out which one it is. */
+
+      if (b.indexOf(' to ') !== -1) {
+        var s = b.split(' to ');
+        attr = s[1].trim();
+        val = s[0].trim();
+      } else {
+        var s = b.split(':');
+        attr = s[0].trim();
+        val = s[1].trim();
+      }
+
+      /* Check if the bound value is an event type.
+         If it is, add an event handler, and if it's not,
+         add a model handler. */
+
       if (_arrayIncludes(eventTypes, attr)) {
         el.addEventListener(attr, _dynamicHandler(val));
         console.log('Added event listener: ' + attr + ' bound to ' + val);
@@ -257,8 +273,8 @@
     });
   });
 
-  document.querySelectorAll('[data-ca-if]').forEach(function(el) {
-    var ifStr = el.getAttribute('data-ca-if');
+  document.querySelectorAll('[data-ca-visible-if], [visible-if]').forEach(function(el) {
+    var ifStr = el.getAttribute('data-ca-visible-if') || el.getAttribute('visible-if');
     var negate = ifStr[0] === '!';
     var path = _parseObjectPath(negate ? ifStr.slice(1) : ifStr);
     var modelName = path[0];
@@ -267,9 +283,9 @@
       var val = _delve(models, path);
 
       if (val)
-        el.classList[negate ? 'add' : 'remove']('ca-hidden');
+        el.classList[negate ? 'remove' : 'add']('ca-visible');
       else
-        el.classList[negate ? 'remove' : 'add']('ca-hidden');
+        el.classList[negate ? 'add' : 'remove']('ca-visible');
     });
 
     console.log({
@@ -277,6 +293,22 @@
       negate,
       path
     });
+  });
+
+  document.querySelectorAll('[data-ca-for-each], [for-each]').forEach(function(el) {
+    var eachStr = el.getAttribute('data-ca-for-each') || el.getAttribute('for-each');
+        
+    var s = eachStr.split(' in ');
+    var itemName = s[0].trim();
+    var bindPath = _parseObjectPath(s[1]);
+
+    bindings[bindPath[0]].push(function(newVal, oldVal) {
+      var val = _delve(models, bindPath);
+
+      console.log('Changed forEach binding', 'Old:', oldVal, 'New:', newVal);
+    });
+
+    console.log({ eachStr, itemName, bindPath });
   });
 
 
@@ -318,7 +350,7 @@
     setInterval(function() {
       for (var model in Ca.models) {
         if (!_deepCompare(Ca.models[model], previous[model])) {
-          _refreshBindings(model);
+          _refreshBindings(model, Ca.models[model], previous[model]);
         }
       }
       previous = _deepCloneObject(Ca.models);
