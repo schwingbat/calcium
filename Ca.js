@@ -3,6 +3,10 @@
 
   var bindings = {};
   var models = {};
+  var config = {
+    digestInterval: 50,
+    hashbang: true,
+  };
 
   /************************************
    *              UTILS               *
@@ -31,6 +35,10 @@
 
   function _parseObjectPath(path) {
     return path.split(/[.|\[\]]/ig);
+  }
+
+  function _parseElementBindings(el) {
+    console.log()
   }
 
   // Dive deep into a nested object
@@ -103,6 +111,7 @@
    ************************************/
 
   // Routing uses hashbang only at the moment. Config options are coming later.
+  var stopHashEvent = false;
 
   var router = {
     routes: {},
@@ -114,6 +123,8 @@
       } else {
         loc = this.buildURL(path)
       }
+
+      // Triggers the event which updates the route.
       window.location.hash = loc;
     },
     match: function(route) {
@@ -159,11 +170,9 @@
 
   window.addEventListener('hashchange', function(e) {
     var path = e.newURL.split('#').pop();
-
-    var exists = !!router.match(path);
-    console.log(exists, path);
-
-    if (exists) {
+    
+    var match = router.match(path);
+    if (!!match) {
       router.activate(path);
     }
   });
@@ -280,6 +289,273 @@
   });
 
 
+  /*******************************************************************
+   *                     FOREACH & LIST BINDINGS                     *
+   *                  -----------------------------                  *
+   *    PLEASE DISREGARD THE LOW QUALITY OF THE FOLLOWING SECTION    *
+   * I'M SURE THERE IS A BETTER WAY TO DO THIS. IT'S BASICALLY VDOM. *
+   *******************************************************************/
+
+  function _getLocalDOM(el) {
+    //console.warn('RUNNING')
+    var item = {};
+
+    switch(el.nodeType) {
+
+    case 1: {// Regular element
+      item.type = 'element';
+      // Get the information needed to recreate an element.
+      item.tag = el.tagName.toLowerCase();
+
+      // Store attributes as an array of attr objects.
+      item.caAttrs = [];
+      item.attrs = [];
+      item.bindings = {};
+
+      for (var i = 0; i < el.attributes.length; i++) {
+        var a = el.attributes[i];
+
+        if (a.name.slice(0, 7) === 'data-ca') {
+
+          // If it's a binding, get the bindings.
+          if (a.name === 'data-ca-bind') {
+            var bindAttr = el.getAttribute('data-ca-bind');
+            if (bindAttr) {
+              bindAttr.split(',').forEach(function(line) {
+                var bind = line.split(':');
+
+                // Add the path under the attribute name in the bindObj.
+                item.bindings[ bind[0].trim() ] = _parseObjectPath( bind[1].trim() );
+              });
+            }
+          } else {
+
+            // If it's not, just add it to the caAttrs array.
+            item.caAttrs.push({
+              attr: a.name,
+              val: a.nodeValue,
+            });
+          }
+        } else {
+
+          // If it doesn't start with data-ca, just add it to the normal one.
+          item.attrs.push({
+            attr: a.name,
+            val: a.nodeValue,
+          })
+        }
+      }
+
+      // Split the path for each attribute into an array.
+      for (var key in item.caAttrs) {
+        var attr = item.caAttrs[key];
+        attr.val = _parseObjectPath(attr.val);
+      }
+
+      item.children = [];
+
+      if ('childNodes' in el) {
+        el.childNodes.forEach(function(node) {
+          item.children.push(_getLocalDOM(node));
+        });
+      }
+
+      break;
+    }
+    case 3: { // Text node
+      item.type = 'text';
+      item.value = el.nodeValue;
+      break;
+    }
+    default:
+      break;
+    }
+
+    console.log(item);
+    return item;
+  }
+
+  // Take the parsed pattern and remake it.
+  function _createElement(pattern) {
+    //console.warn(pattern);
+    var el;
+
+    switch(pattern.type) {
+
+    case 'text': {
+      el = document.createTextNode(pattern.value);
+      break;
+    }
+
+    case 'element': {
+      el = document.createElement(pattern.tag);
+
+      pattern.attrs.forEach(function(a) {
+        el.setAttribute(a.attr, a.val);
+      });
+
+      pattern.caAttrs.forEach(function(a) {
+        el.setAttribute(a.attr, a.val);
+      });
+
+      if (!el.__caItemScope__) {
+        el.__caItemScope__ = {};
+      }
+
+      if (!el.__caItemScope__.bindings) {
+        el.__caItemScope__.bindings = [];
+      }
+
+      el.__caItemScope__.bindings = pattern.bindings;
+
+      pattern.children.forEach(function(child) {
+        el.appendChild(_createElement(child));
+      });
+
+      break;
+    }
+
+    default:
+      break;
+
+    }
+
+    return el;
+  }
+
+  function _updateElement(el, data, index) {
+    var oldData = el.__caItemScope__;
+
+    if (!oldData || !_deepCompare(oldData, data)) {
+
+    }
+
+    oldData = data;
+  }
+
+  document.querySelectorAll('[data-ca-foreach]').forEach(function(el) {
+    var eachStr = el.getAttribute('data-ca-foreach');
+    var parent = el.parentNode;
+
+    // Make the index (or key if object) available to repeated elements and their children.
+    var indexName = el.getAttribute('data-ca-indexname');
+
+    var path = _parseObjectPath(eachStr);
+    var modelName = path[0];
+
+    function _getItemBindings(el) {
+      var binds = {};
+      var b = el.getAttribute('data-ca-bind');
+      if (b) {
+        binds = _parseElementBindings(b);
+      }
+    }
+
+    //return false;
+
+    var childBindings = _getItemBindings(el);
+
+    // Remove the element. It's only the prototype for the others. We won't be using it.
+    el.parentNode.removeChild(el);
+
+    var eachScope = {
+      protoEl: el,
+      path: path,
+      elements: [],
+      itemPattern: _getLocalDOM(el),
+    }
+
+    if (!bindings[modelName]) {
+      bindings[modelName] = [];
+    }
+
+    // This is the function that will be run on each item.
+    var itemBindFunc = function(item, scopeData, itemData, index) {
+      var itemScope = item.__caItemScope__;
+      if (itemScope) {
+
+        // TODO: This whole thing probably can be refactored.
+        if (itemScope.bindings) {
+          //console.log(itemScope.bindings);
+          for (var attr in itemScope.bindings) {
+            //console.log(attr);
+            var val = itemScope.bindings[attr];
+            //console.log(val);
+
+            // For each binding, if the path starts with 'this' or the specified index name,
+            // take the appropriate action. Otherwise proceed normally.
+            if (val[0] === 'this') {
+              if (_arrayIncludes(directSetters, attr)) {
+                item[attr] = _delve(itemData, val.slice(1));
+              } else {
+                item.setAttribute(attr, _delve(itemData, val.slice(1)));
+              }
+            } else if (val[0] === indexName) {
+              if (_arrayIncludes(directSetters, attr)) {
+                item[attr] = index;
+              } else {
+                item.setAttribute(attr, index);
+              }
+            } else {
+              item[attr] = _delve(models, val);
+            }
+          }
+        }
+
+        //console.log(item);
+
+        if (item.childNodes) {
+          for (var i in item.childNodes) {
+            itemBindFunc(item.childNodes[i], scopeData, itemData, index);
+          }
+        }
+
+        //console.log(itemScope, item, scopeData, itemData, index);
+      }
+
+    }
+
+    // The master function to be run when the model updates.
+    var eachBindFunc = function() {
+
+      // Grab the data.
+      var scope = eachScope;
+      var eachData = _delve(models, scope.path);
+      console.warn(eachData, scope);
+
+      if (typeof eachData !== 'object') {
+        throw new Error('data-ca-foreach can only be used with an object or array! Type is '+(typeof eachData));
+      }
+
+      if (Array.isArray(eachData)) {
+        // Iterate through each item.
+        for (var i = 0; i < eachData.length; i++) {
+
+          // If an item doesn't exist for the index, create and attach it.
+          if (!scope.elements[i]) {
+            scope.elements[i] = _createElement(scope.itemPattern);
+            //scope.elements[i] = scope.protoEl.cloneNode();
+            console.log(scope.elements[i], scope.elements[i].__caItemScope__)
+            parent.appendChild(scope.elements[i]);
+          }
+
+          // Update item bindings.
+          itemBindFunc(scope.elements[i], eachData, eachData[i], i);
+        }
+
+        // Cut off the remaining elements.
+        if (scope.elements.length > eachData.length) {
+          scope.elements.slice(0, eachData.length);
+        }
+      } else {
+        // If it's an object.
+      }
+    }
+
+    bindings[modelName].push(eachBindFunc);
+  });
+
+
   /************************************
    *            NAVIGATION            *
    ************************************/
@@ -306,9 +582,9 @@
   Ca.router = {
     go: router.go
   }
+  Ca.config = config;
 
   window.Ca = Ca;
-
 
   // Start model digest cycle.
 
@@ -318,11 +594,12 @@
     setInterval(function() {
       for (var model in Ca.models) {
         if (!_deepCompare(Ca.models[model], previous[model])) {
+          console.log('changed!');
           _refreshBindings(model);
         }
       }
       previous = _deepCloneObject(Ca.models);
-    }, 50);
+    }, config.digestInterval);
   })();
 
   // Initialize route on load.

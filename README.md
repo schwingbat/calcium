@@ -19,7 +19,7 @@ It does NOT offer:
 
 - Require **no build step or tooling** (the whole point)
 - Have no dependencies
-- Be fewer than 500 lines of code (excluding comments)
+- ~~Contain fewer than 500 lines of code~~ temporarily over
 
 ## How It Works
 

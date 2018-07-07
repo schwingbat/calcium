@@ -16,6 +16,16 @@
 			<div data-ca-if="data.loggedIn" class="welcome-box">
 				<p>Hello, <span data-ca-bind="textContent: data.user.username"></span>!</p>
 				Not you? <button data-ca-bind="click: methods.logout">Log Out</button>
+
+				<ul class="food-list">
+					<li class="food-item food-item--test" data-ca-foreach="data.user.favoriteFoods" data-ca-indexname="index">
+						Item <span data-ca-bind="textContent: index"></span>.
+            <span data-ca-bind="textContent: this"></span>
+            <button data-ca-bind="click: methods.removeFood(index)">remove</button>
+					</li>
+				</ul>
+
+        <a href="/editfoods" data-ca-link>Edit your favorite foods</a>
 			</div>
 
 			<div data-ca-if="!data.loggedIn">
@@ -35,7 +45,18 @@
 			</form>
 
 			<a href="/" data-ca-link>Back to home</a>
+		</li>
 
+		<li class="ca-page" data-ca-route="/editfoods">
+			<span>Add your favorite foods!</span>
+
+      <ul class="food-list">
+        <li class="food-item" data-ca-foreach="data.user.favoriteFoods">
+          <input type="text" data-ca-bind="value: this, input: methods.setFood"></input>
+          <button data-ca-bind="click: methods.removeFood">&times;</button>
+        </li>
+      </ul>
+      <button data-ca-bind="click: methods.addFood">+</button>
 		</li>
 
 		<!-- 404 -->
@@ -51,8 +72,22 @@
 	<script>
 		Ca.models.data = {
 			greeting: 'Hello! this is from the "data" model.',
-			loggedIn: false,
-			user: null,
+			loggedIn: true,
+			user: {
+        username: 'TestUser',
+        favoriteFoods: [
+          'pizza',
+          'burgers',
+          'linguini',
+          'ratatouille',
+        ],
+        favFoodObject: {
+          'one': 'pizza',
+          'two': 'burgers',
+          'thre': 'linguini',
+          'four': 'ratatouille',
+        }
+      },
 		}
 
 		Ca.models.methods = {
@@ -79,7 +114,27 @@
 				data.loggedIn = false;
 				data.user = null;
 			},
+
+			addFood: function() {
+				var data = Ca.models.data;
+
+        console.log(data);
+
+				data.user.favoriteFoods.push('fsf');
+			},
+
+			removeFood: function(index) {
+				var data = Ca.models.data;
+
+				data.user.favoriteFoods.splice(index, 1);
+			},
+
+      setFood: function() {
+
+      },
 		}
+
+    //Ca.config.digestInterval = 16;
 
 		console.log(window.Ca);
 	</script>
