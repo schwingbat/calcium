@@ -23,9 +23,14 @@
 }
 
 .ca-visible {
-  display: block;
+  display: block !important;
 }
 
 .ca-hidden {
+  display: none;
+}
+
+[data-ca-visible-if],
+[visible-if] {
   display: none;
 }

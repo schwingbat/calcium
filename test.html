@@ -3,15 +3,15 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Calcium Test</title>
-	<link rel="stylesheet" href="Ca.css">
+	<link rel="stylesheet" href="dist/ca.css">
 	<link rel="stylesheet" href="test.css">
 </head>
 <body>
 	<ul class="ca-container">
 
 		<!-- Home -->
-		<li class="ca-page" data-ca-route="/">
-			<span data-ca-bind="textContent: data.greeting"></span>
+		<li class="ca-page" route="/">
+			<span bind="data.greeting to textContent"></span>
 
 			<div data-ca-if="data.loggedIn" class="welcome-box">
 				<p>Hello, <span data-ca-bind="textContent: data.user.username"></span>!</p>
@@ -28,16 +28,16 @@
         <a href="/editfoods" data-ca-link>Edit your favorite foods</a>
 			</div>
 
-			<div data-ca-if="!data.loggedIn">
+			<div visible-if="!data.loggedIn">
 				<p>Hey there! You aren't logged in. Why not <a href="/login" data-ca-link>log in?</a></p>
 			</div>
 		</li>
 
 		<!-- Login -->
-		<li class="ca-page" data-ca-route="/login">
+		<li class="ca-page" route="/login">
 			<span>Please log in</span>
 
-			<form class="login-form" data-ca-bind="submit: methods.login">
+			<form class="login-form" bind="submit: methods.login">
 				<label for="login-name">Username</label>
 				<input type="text" id="login-name">
 
@@ -67,7 +67,7 @@
 
 	</ul>
 
-	<script src="Ca.js"></script>
+	<script src="dist/ca.js"></script>
 
 	<script>
 		Ca.models.data = {

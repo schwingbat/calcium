@@ -1,5 +1,24 @@
+body {
+	background: #3C0A4C;
+	color: #fff;
+}
+
+a {
+	color: #FF351F;
+}
+
 .ca-container {
 	font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+	max-width: 700px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.ca-visible {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
 }
 
 .welcome-box {
